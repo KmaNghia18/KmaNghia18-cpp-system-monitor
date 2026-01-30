@@ -1,4 +1,5 @@
 #include "monitors/NetworkMonitor.h"
+#include "utils/SystemUtils.h"
 #include <iostream>
 
 NetworkMonitor::NetworkMonitor()
@@ -88,40 +89,50 @@ bool NetworkMonitor::isInitialized() const {
 void NetworkMonitor::collectData() {
     m_interfaces.clear();
 
-    // Get the table of network interfaces
+    // Get the table of network interfaces (use GetIfTable for Ming compatibility)
     ULONG bufferSize = 0;
-    DWORD result = GetIfTable2(nullptr);
+    GetIfTable(nullptr, &bufferSize, FALSE);
     
-    MIB_IF_TABLE2* ifTable = nullptr;
-    result = GetIfTable2(&ifTable);
+    MIB_IFTABLE* ifTable = (MIB_IFTABLE*)malloc(bufferSize);
+    if (!ifTable) {
+        return;
+    }
+    
+    DWORD result = GetIfTable(ifTable, &bufferSize, FALSE);
     
     if (result != NO_ERROR) {
         std::cerr << "Failed to get network interface table. Error: " << result << std::endl;
+        free(ifTable);
         return;
     }
 
     // Iterate through all interfaces
-    for (ULONG i = 0; i < ifTable->NumEntries; i++) {
-        MIB_IF_ROW2& row = ifTable->Table[i];
+    for (DWORD i = 0; i < ifTable->dwNumEntries; i++) {
+        MIB_IFROW& row = ifTable->table[i];
         
-        // Filter out loopback and inactive interfaces
-        if (row.Type == IF_TYPE_SOFTWARE_LOOPBACK) {
+        // Filter out loopback
+        if (row.dwType == MIB_IF_TYPE_LOOPBACK) {
             continue;
         }
 
         NetworkInterfaceInfo info;
-        info.name = row.Alias;
-        info.description = row.Description;
-        info.bytesReceived = row.InOctets;
-        info.bytesSent = row.OutOctets;
+        
+        // Convert description to wstring
+        char descBuffer[MAXLEN_IFDESCR + 1] = {0};
+        memcpy(descBuffer, row.bDescr, row.dwDescrLen);
+        info.description = SystemUtils::stringToWstring(descBuffer);
+        info.name = info.description;  // Use description as name
+        
+        info.bytesReceived = row.dwInOctets;
+        info.bytesSent = row.dwOutOctets;
         info.downloadSpeed = 0.0;
         info.uploadSpeed = 0.0;
-        info.isActive = (row.OperStatus == IfOperStatusUp);
+        info.isActive = (row.dwOperStatus == MIB_IF_OPER_STATUS_OPERATIONAL);
         
         m_interfaces.push_back(info);
     }
 
-    FreeMibTable(ifTable);
+    free(ifTable);
 }
 
 void NetworkMonitor::calculateSpeeds() {

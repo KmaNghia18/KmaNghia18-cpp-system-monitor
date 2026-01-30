@@ -69,11 +69,20 @@ target_link_libraries(SystemMonitor
 
 # Link Windows libraries
 if(WIN32)
-    target_link_libraries(SystemMonitor
-        pdh
-        iphlpapi
-        kernel32
-    )
+    if(MSVC)
+        target_link_libraries(SystemMonitor
+            pdh
+            iphlpapi
+            kernel32
+        )
+    else()
+        # MinGW uses different library names
+        target_link_libraries(SystemMonitor
+            -lpdh
+            -liphlpapi
+            -lkernel32
+        )
+    endif()
 endif()
 
 # Set output directory

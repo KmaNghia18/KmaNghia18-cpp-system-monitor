@@ -3,8 +3,6 @@
 #include "utils/SystemUtils.h"
 #include <QString>
 
-using namespace QT_CHARTS_NAMESPACE;
-
 NetworkWidget::NetworkWidget(NetworkMonitor *monitor, QWidget *parent)
     : QWidget(parent)
     , m_monitor(monitor)

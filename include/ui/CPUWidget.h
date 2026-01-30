@@ -32,11 +32,11 @@ private:
     QLabel *m_usageLabel;
     QLabel *m_coreCountLabel;
     
-    QT_CHARTS_NAMESPACE::QChartView *m_chartView;
-    QT_CHARTS_NAMESPACE::QChart *m_chart;
-    QT_CHARTS_NAMESPACE::QLineSeries *m_series;
-    QT_CHARTS_NAMESPACE::QValueAxis *m_axisX;
-    QT_CHARTS_NAMESPACE::QValueAxis *m_axisY;
+    QChartView *m_chartView;
+    QChart *m_chart;
+    QLineSeries *m_series;
+    QValueAxis *m_axisX;
+    QValueAxis *m_axisY;
     
     std::deque<double> m_dataPoints;
     int m_maxDataPoints;
